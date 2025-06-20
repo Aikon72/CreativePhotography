@@ -1,4 +1,3 @@
-import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -11,9 +10,8 @@ public class LoginTest {
     WebDriver driver;
     WebDriverWait wait;
 
-    @BeforeMethod
+    @BeforeClass
     public void setup() {
-        WebDriverManager.chromedriver().setup();
         driver = new ChromeDriver();
         driver.manage().window().maximize();
         driver.manage().deleteAllCookies();
@@ -21,37 +19,86 @@ public class LoginTest {
     }
     @Test
     public void testSuccessfulLogin(){
-        driver.get("https://creaphoto.su");
-        wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//*[@id=\"root\"]/main/div/div/div/div/div[4]/button[1]"))).click();
+        driver.get("https://creaphoto.su/login");
+
         wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.name("input"))).sendKeys(Config.getProperty("right.login"));
+                By.xpath("//input[@data-cy='nickName']"))).sendKeys(Config.getProperty("right.login"));
         wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.name("password"))).sendKeys(Config.getProperty("right.password"));
+                By.xpath("//input[@data-cy='password']"))).sendKeys(Config.getProperty("right.password"));
         wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//*[@id=\"root\"]/main/div/div/form/div/div[4]/button"))).click();
+                By.cssSelector("button[data-cy=\"loginButton\"]"))).click();
         String value = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.xpath("//*[@id=\"root\"]/main/div/div/form/div/div[6]/div/span[2]"))).getText();
-        assertEquals(value, "Псевдоним или пароль - не корректны");
+                By.xpath("//div[@class='ml-5' and contains(text(), 'Тестировщик')]"))).getText();
+        assertEquals(value, "Тестировщик");
+        wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("span.p-menuitem-icon.pi.pi-sign-out"))).click();
     }
 
     @Test
-    public void testUnsuccessfulLogin() {
-        driver.get("https://creaphoto.su");
+    public void testWrongPasswordLogin() {
+        driver.get("https://creaphoto.su/login");
 
-        wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//*[@id=\"root\"]/main/div/div/div/div/div[4]/button[1]"))).click();
         wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.name("input"))).sendKeys("Aikon");
+                By.cssSelector("input[data-cy='nickName']"))).sendKeys(Config.getProperty("right.login"));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.cssSelector("input[data-cy='password']"))).sendKeys("1234");
         wait.until(ExpectedConditions.elementToBeClickable(
                 By.xpath("//*[@id=\"root\"]/main/div/div/form/div/div[4]/button"))).click();
 
         String value = wait.until(ExpectedConditions.visibilityOfElementLocated(
                 By.xpath("//*[@id=\"root\"]/main/div/div/form/div/div[6]/div/span[2]"))).getText();
+        assertEquals(value, "Псевдоним не корректен");
+    }
+
+    @Test
+    public void testWrongNicknameLogin() {
+        driver.get("https://creaphoto.su/login");
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.cssSelector("input[data-cy='nickName']"))).sendKeys("Tester");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.cssSelector("input[data-cy='password']"))).sendKeys(Config.getProperty("right.password")+"2");
+        wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//*[@id=\"root\"]/main/div/div/form/div/div[4]/button"))).click();
+
+        String value = wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//*[@id=\"root\"]/main/div/div/form/div/div[6]/div/span[2]"))).getText();
+        assertEquals(value, "Псевдоним не корректен");
+    }
+
+    @Test
+    public void testEmptyNicknameLogin() {
+        driver.get("https://creaphoto.su/login");
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.cssSelector("input[data-cy='nickName']"))).sendKeys("");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.cssSelector("input[data-cy='password']"))).sendKeys(Config.getProperty("right.password")+"2");
+        wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//*[@id=\"root\"]/main/div/div/form/div/div[4]/button"))).click();
+
+        String value = wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//*[@id=\"root\"]/main/div/div/form/div/div[6]/div/span[2]"))).getText();
+        assertEquals(value, "Псевдоним не корректен");
+    }
+
+    @Test
+    public void testEmptyPasswordLogin() {
+                driver.get("https://creaphoto.su/login");
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.cssSelector("input[data-cy='nickName']"))).sendKeys(Config.getProperty("right.login"));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.cssSelector("input[data-cy='password']"))).sendKeys("");
+        wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//*[@id=\"root\"]/main/div/div/form/div/div[4]/button"))).click();
+        String value = wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//*[@id=\"root\"]/main/div/div/form/div/div[6]/div/span[2]"))).getText();
+
         assertEquals(value, "Псевдоним или пароль - не корректны");
     }
 
-    @AfterMethod
+    @AfterClass
     public void teardown() {
         driver.quit();
     }
